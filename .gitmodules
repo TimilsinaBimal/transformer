@@ -1,0 +1,3 @@
+[submodule "transformers/tokenizer"]
+	path = transformers/tokenizer
+	url = git@github.com:TimilsinaBimal/bpe.git
