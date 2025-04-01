@@ -37,15 +37,17 @@ This project implements a Transformer-based model using PyTorch for sequence-bas
    - Edit `transformer/config.py` to set your configurations such as paths, sequence length, batch size, and other hyperparameters.
    - Run the training script with:
      ```bash
-     python -m transformer.train
+     python main.py
      ```
+     Then input `y` to train the model.
    - This will tokenize the dataset, prepare data loaders, and start training the transformer model, updating model weights iteratively.
 
 3. **Perform Inference**:
    - The `inference.py` script allows text sequence generation. Ensure the path to the trained model is correctly configured and run the script using:
      ```bash
-     python -m transformer.inference
+     python main.py
      ```
+     Then input `n` for inference.
    - Provide a starting prompt, and specify the maximum length of the generation.
 
 4. **Tokenization**:
