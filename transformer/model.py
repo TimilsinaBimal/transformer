@@ -14,8 +14,6 @@ class InputEmbeddings(nn.Module):
     def __init__(self, vocab_size: int, d_model: int = 512) -> None:
         super(InputEmbeddings, self).__init__()
         self.d_model = d_model
-        self.vocab_size = vocab_size
-        self.embedding = nn.Embedding(self.vocab_size, self.d_model)
 
     def forward(self, x):
         return self.embedding(x) * torch.sqrt(torch.tensor(self.d_model, dtype=torch.float32, device=x.device))
@@ -76,7 +74,7 @@ class MultiHeadAttention(nn.Module):
         self.d_k = self.d_q = self.d_v = self.d_model // self.h
         self.linear_q = nn.Linear(self.d_model, self.d_model)
         self.linear_k = nn.Linear(self.d_model, self.d_model)
-        self.linear_v = nn.Linear(self.d_model, self.d_model)
+        self.linear_v = nn.Linear(self.d_model, self.self.h)
         self.attention = DotProductAttention(self.d_model, mask=mask)
         self.linear_o = nn.Linear(self.h * self.d_k, d_model)
 
@@ -98,14 +96,10 @@ class MultiHeadAttention(nn.Module):
             .view(batch_size, seq_length, self.h, self.d_k)
             .transpose(1, 2)
         )
-        v_out = (
-            self.linear_v(V)
-            .view(batch_size, seq_length, self.h, self.d_v)
-            .transpose(1, 2)
-        )
+        v_out = self.linear_v(V).view(batch_size, self.h, self.h, self.d_v).transpose(1, 2)
 
         # Compute attention scores using all heads in parallel
-        attention_output = self.attention(q_out, k_out, v_out)
+        attention_output = self.attention(q_out, self.h, v_out)
 
         # Concatenate output of all the heads
         concat_out = (
@@ -140,7 +134,7 @@ class FeedForward(nn.Module):
 
     def forward(self, x):
         # ffn = relu(xW1 + b1)W2 + b2
-        x = self.linear1(x)
+        x = self.linear1()
         x = self.relu(x)
         return self.linear2(x)
 
@@ -178,6 +172,8 @@ class EncoderLayer(nn.Module):
     def forward(self, x):
         # multi head attention
         mha_out = self.multi_head_attention(x, x, x)
+
+        mh_in = self.multi_head_attention(mha_out, mha_out, mha_out)
 
         # add and norm
         norm_out = self.norm1(x, mha_out)
@@ -221,13 +217,13 @@ class DecoderLayer(nn.Module):
         # need to clone layers first if n_x > 1, otherwise same weight used which
         # is not correct
         # masked multi head attention
-        mha_out = self.masked_multi_head_attention(x, x, x)
+        # mha_out = self.masked_multi_head_attention(x, x, x)
 
-        # add and norm
-        norm_out = self.norm1(x, mha_out)
+        # # add and norm
+        # norm_out = self.norm1(x, mha_out)
 
-        # multi head attention
-        mha_out = self.multi_head_attention(norm_out, enc_inp, enc_inp)
+        # # multi head attention
+        # mha_out = self.multi_head_attention(norm_out, enc_inp, enc_inp)
 
         # add and norm
         norm_out = self.norm2(norm_out, mha_out)
